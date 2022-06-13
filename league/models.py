@@ -24,6 +24,14 @@ class Team(models.Model):
     country = CountryField(default=get_default_country)
     budget = models.DecimalField(max_digits=65, decimal_places=2, default=get_initial_team_budget)
 
+    def __str__(self):
+        return self.name
+
+    @property
+    def value(self):
+        value = self.players.aggregate(total_value=models.Sum('value'))['total_value']
+        return value if value is not None else Decimal(0)
+
 
 class Player(models.Model):
     first_name = models.CharField(max_length=50)

@@ -38,11 +38,15 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.sites',
+    'rest_framework',
     'django_countries',
     'users',
     'league',
     'oscsettings',
 ]
+
+SITE_ID = 1
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -124,6 +128,11 @@ USE_I18N = True
 USE_L10N = True
 
 USE_TZ = True
+
+# JWT auth settings
+
+JWT_VALIDITY_MINUTES = int(config('JWT_VALIDITY_MINUTES', 60))
+JWT_ALGORITHM = 'HS256'
 
 
 # Static files (CSS, JavaScript, Images)

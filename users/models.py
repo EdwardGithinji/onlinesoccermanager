@@ -1,3 +1,7 @@
+import jwt
+from datetime import datetime, timedelta
+
+from django.conf import settings
 from django.contrib.auth.base_user import AbstractBaseUser
 from django.contrib.auth.models import PermissionsMixin
 from django.db import models
@@ -44,5 +48,26 @@ class User(AbstractBaseUser, PermissionsMixin):
         verbose_name_plural = _('users')
 
     def __str__(self):
-        fullname = " ".join([self.first_name, self.last_name])
-        return fullname.strip()
+        return self.email
+
+    @property
+    def full_name(self):
+        return ' '.join(filter(None, (self.first_name, self.last_name)))
+
+    @property
+    def is_team_owner(self) -> bool:
+        return hasattr(self, 'team')
+
+    @property
+    def token(self):
+        valid_minutes: int = getattr(settings, "JWT_VALIDITY_MINUTES", 60)
+        expiry_date = datetime.now() + timedelta(minutes=valid_minutes)
+        algorithm: str = getattr(settings, "JWT_ALGORITHM", 'HS256')
+
+        token_payload = {
+            'id': self.pk,
+            'exp': int(expiry_date.strftime('%s')),
+            "email": self.email
+        }
+
+        return jwt.encode(token_payload, settings.SECRET_KEY, algorithm=algorithm)
