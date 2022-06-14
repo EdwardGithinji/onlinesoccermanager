@@ -1,5 +1,5 @@
+from typing import Any
 from decimal import Decimal
-from email.policy import default
 from django.contrib.postgres.fields import CICharField
 from django.db import models
 from django_countries.fields import CountryField
@@ -49,3 +49,10 @@ class Transfer(models.Model):
     player = models.ForeignKey(Player, null=True, blank=True, related_name='transfers', on_delete=models.SET_NULL)
     price = models.DecimalField(max_digits=65, decimal_places=2)
     status = models.CharField(max_length=8, choices=TransferStatus.choices, default=TransferStatus.PENDING)
+
+    def save(self, *args: Any, **kwargs: Any) -> None:
+        if not self.id:
+            self.status = TransferStatus.PENDING
+        if self.status == TransferStatus.PENDING and self.player is not None:
+            self.seller = self.player.team
+        super().save(**kwargs)

@@ -14,7 +14,7 @@ NUMBER_OF_ATTACKERS = 5
 def generate_team_with_players(user: User):
     fake = Faker()
     team_names_set = set(Team.objects.values_list('name', flat=True))
-    abbrev_size = 2
+    abbrev_size = 10
     team_name = fake.city() + ' ' + ''.join(choices(string.ascii_uppercase, k=abbrev_size))
 
     while team_name in team_names_set:

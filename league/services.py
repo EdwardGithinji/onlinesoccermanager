@@ -2,16 +2,20 @@ from decimal import Decimal
 from random import randint
 from typing import Optional
 from django.db import transaction
+from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import ValidationError, PermissionDenied
 from league.models import Team, Player, Transfer
 from league.constants import TransferStatus
 from users.models import User
 
 @transaction.atomic
-def team_update(team: Team, name:Optional[str] = None, country: Optional[str] = None) -> Player:
-    ## pending
-    ## only team owner can update the team
+def team_update(team: Team, user: User, name:Optional[str] = None, country: Optional[str] = None) -> Player:
+
+    if user != team.owner:
+        raise PermissionDenied({'detail':'only team owner can update team details'})
     if name:
+        if Team.objects.filter(name=name).exists():
+            raise ValidationError({'detail': 'A team already exists with that name, choose another'})
         team.name = name
     if country:
         team.country = country
@@ -22,14 +26,14 @@ def team_update(team: Team, name:Optional[str] = None, country: Optional[str] = 
 @transaction.atomic
 def player_update(
     player: Player,
+    user: User,
     first_name:Optional[str] = None,
     last_name:Optional[str] = None,
     country: Optional[str] = None
     ) -> Player:
 
-    # pending
-    # user requesting player update has a team, and that team is the one the player belongs to
-
+    if player.team.owner != user:
+        raise PermissionDenied({'detail': 'Only team owner of team player belongs to can update player details'})
 
     if first_name:
         player.first_name = first_name
@@ -42,21 +46,14 @@ def player_update(
 
 
 @transaction.atomic
-def player_transfer_create(player_id: int, price: Decimal, user=None):
-    # pending
-    ## integration of auth to get user creating the transfer
-    ## check that user actually has a team
-    ## check that user is team owner of the team player belongs to
+def player_transfer_create(player_id: int, price: Decimal, user: User):
+    player = get_object_or_404(Player, pk=player_id)
+    if player.team.owner != user:
+        raise PermissionDenied({'detail': 'Only team owner of team player belongs to can transfer player'})
 
-    try:
-        player = Player.objects.get(id=player_id)
-        seller = player.team
-    except Player.DoesNotExist:
-        raise ValidationError({'detail': 'not found. Player does not exist'})
-
-    if Transfer.objects.filter(player=player, status=TransferStatus.PENDING):
+    if Transfer.objects.filter(player=player, status=TransferStatus.PENDING).exists():
         raise ValidationError({'detail': 'player is already on the transfer list'})
-
+    seller = user.team
     transfer = Transfer.objects.create(player=player, seller=seller, price=price)
 
     return transfer
@@ -64,19 +61,12 @@ def player_transfer_create(player_id: int, price: Decimal, user=None):
 
 @transaction.atomic
 def buy_player_complete_transfer(transfer_id, user: User):
-    # pending checks
-    # user requesting buy is not the seller
-    # user requesting buy actually has a team
-    # user has budget to afford buying the player
     if not user.is_team_owner:
         raise PermissionDenied({'detail': 'only users who own a team can buy a player'})
     buyer = user.team
-    try:
-        transfer = Transfer.objects.get(id=transfer_id)
-        seller = transfer.seller
-        player = transfer.player
-    except Transfer.DoesNotExist:
-        raise ValidationError({'detail': 'not found. Transfer does not exist'})
+    transfer = get_object_or_404(Transfer, pk=transfer_id)
+    seller = transfer.seller
+    player = transfer.player
     if seller == buyer:
         raise PermissionDenied({'detail': 'team selling a player cannot buy its own player'})
     if transfer.status == TransferStatus.COMPLETE:
@@ -88,7 +78,7 @@ def buy_player_complete_transfer(transfer_id, user: User):
 
     seller.budget += transfer.price
     buyer.budget -= transfer.price
-    player.value = transfer.price * Decimal((player_value_markup / 100)) + transfer.price
+    player.value += (player.value * Decimal((player_value_markup / 100)))
     player.team = buyer
     transfer.status = TransferStatus.COMPLETE
     transfer.buyer = buyer

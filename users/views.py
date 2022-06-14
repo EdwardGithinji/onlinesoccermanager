@@ -1,6 +1,7 @@
 from django.contrib.auth import authenticate
 
 from rest_framework import status, serializers
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from users.selectors import user_retrieve_by_email
@@ -8,6 +9,7 @@ from users.services import user_create
 
 
 class RegisterUserView(APIView):
+    permission_classes = [AllowAny]
 
     class InputSerializer(serializers.Serializer):
         email = serializers.EmailField()
@@ -17,6 +19,7 @@ class RegisterUserView(APIView):
         password2 = serializers.CharField()
 
     class OutputSerializer(serializers.Serializer):
+        id = serializers.IntegerField()
         email = serializers.EmailField()
         first_name = serializers.CharField(allow_null=True)
         last_name = serializers.CharField(allow_null=True)
@@ -30,6 +33,7 @@ class RegisterUserView(APIView):
 
 
 class UserLoginView(APIView):
+    permission_classes = [AllowAny]
 
     class InputSerializer(serializers.Serializer):
         email = serializers.EmailField()
@@ -60,4 +64,4 @@ class UserLoginView(APIView):
             return Response({"detail": "Invalid email or password"}, status=status.HTTP_401_UNAUTHORIZED)
 
         response_data = self.OutputSerializer(user).data
-        return Response(response_data, status=status.HTTP_201_CREATED)
+        return Response(response_data, status=status.HTTP_200_OK)

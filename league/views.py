@@ -1,12 +1,12 @@
 from django.shortcuts import get_object_or_404
 from rest_framework import status, serializers
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django_countries.serializer_fields import CountryField
 
 from league.selectors import team_retrieve, team_list_players, player_retrieve, transfers_list
 from league.services import team_update, player_update, player_transfer_create, buy_player_complete_transfer
-from users.models import User
 
 
 class TeamUpdateRetrieveView(APIView):
@@ -38,7 +38,7 @@ class TeamUpdateRetrieveView(APIView):
         team = team_retrieve(team_id)
         team_update_serializer = self.InputSerializer(data=request.data)
         team_update_serializer.is_valid(raise_exception=True)
-        team = team_update(**team_update_serializer.validated_data, team=team)
+        team = team_update(**team_update_serializer.validated_data, team=team, user=request.user)
         response_data = self.OutputSerializer(team).data
         return Response(response_data, status=status.HTTP_200_OK)
 
@@ -63,7 +63,7 @@ class TeamPlayersListView(APIView):
 
 
 class PlayerUpdateRetrieveView(APIView):
-
+    permission_classes = [IsAuthenticated]
     class InputSerializer(serializers.Serializer):
         first_name = serializers.CharField(required=False, allow_null=False)
         last_name = serializers.CharField(required=False, allow_null=False)
@@ -78,6 +78,7 @@ class PlayerUpdateRetrieveView(APIView):
         country = CountryField(name_only=True)
         value = serializers.DecimalField(max_digits=65, decimal_places=2)
         team = serializers.IntegerField(source='team.id')
+        team_name = serializers.CharField(source='team.name')
 
     def get(self, request, player_id):
         player = player_retrieve(player_id)
@@ -88,14 +89,10 @@ class PlayerUpdateRetrieveView(APIView):
         player = player_retrieve(player_id)
         player_update_serializer = self.InputSerializer(data=request.data)
         player_update_serializer.is_valid(raise_exception=True)
-        player = player_update(**player_update_serializer.validated_data, player=player)
+        player = player_update(**player_update_serializer.validated_data, player=player, user=request.user)
         response_data = self.OutputSerializer(player).data
         return Response(response_data, status=status.HTTP_200_OK)
 
-    def get(self, request, player_id):
-        player = player_retrieve(player_id)
-        response_data = self.OutputSerializer(player).data
-        return Response(response_data, status=status.HTTP_200_OK)
 
 
 class TransferListView(APIView):
@@ -133,16 +130,16 @@ class PlayerTransferPostView(APIView):
     def post(self, request, player_id):
         player_transfer_create_serializer = self.InputSerializer(data=request.data)
         player_transfer_create_serializer.is_valid(raise_exception=True)
-        transfer = player_transfer_create(**player_transfer_create_serializer.validated_data, player_id=player_id)
+        transfer = player_transfer_create(
+            **player_transfer_create_serializer.validated_data,
+            player_id=player_id,
+            user=request.user
+            )
         response_data = self.OutputSerializer(transfer).data
-        return Response(response_data, status=status.HTTP_200_OK)
+        return Response(response_data, status=status.HTTP_201_CREATED)
 
 
 class TransferBuyPostView(APIView):
-
-    # remember to deprecate this when auth is integrated
-    class InputSerializer(serializers.Serializer):
-        user = serializers.IntegerField()
 
     class OutputSerializer(serializers.Serializer):
         id = serializers.IntegerField()
@@ -157,10 +154,6 @@ class TransferBuyPostView(APIView):
         buyer_name = serializers.CharField(source='buyer.name')
 
     def post(self, request, transfer_id):
-        input_serializer = self.InputSerializer(data=request.data)
-        input_serializer.is_valid(raise_exception=True)
-        user_id = input_serializer.validated_data['user']
-        user = get_object_or_404(User, pk=user_id)
-        transfer = buy_player_complete_transfer(transfer_id, user=user)
+        transfer = buy_player_complete_transfer(transfer_id, user=request.user)
         response_data = self.OutputSerializer(transfer).data
-        return Response(response_data, status=status.HTTP_200_OK)
+        return Response(response_data, status=status.HTTP_201_CREATED)

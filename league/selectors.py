@@ -15,5 +15,6 @@ def team_list_players(team_id):
 def player_retrieve(player_id):
     return get_object_or_404(Player, pk=player_id)
 
+
 def transfers_list(status:str=TransferStatus.PENDING):
     return Transfer.objects.filter(status=status)
