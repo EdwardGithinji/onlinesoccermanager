@@ -8,9 +8,109 @@ from django_countries.fields import Country
 
 from league.constants import TransferStatus
 from league.models import Team, Player, Transfer
-from league.tasks import generate_team_with_players
+from league.services import generate_team_with_players
 
 User = get_user_model()
+
+
+class MyTeamRetrieveApiTestCase(TestCase):
+    def setUp(self) -> None:
+        super().setUp()
+        self.team_url = f'/api/league/my_team/'
+        self.user = User.objects.create_user(
+            email='johndoe@onlinesoccermanager.com',
+            first_name='John',
+            last_name='Doe',
+            password='barbarfoo'
+        )
+        self.auth_header = f'Bearer {self.user.token}'
+
+    def test_retrieve_my_team_non_authenticated(self) -> None:
+        response = self.client.get(self.team_url)
+        self.assertEqual(response.status_code, 401)
+
+    def test_retrieve_my_team_authenticated_non_team_owner(self) -> None:
+        response = self.client.get(self.team_url, HTTP_AUTHORIZATION=self.auth_header)
+        self.assertEqual(response.status_code, 404)
+
+    def test_retrieve_my_team_by_team_owner(self) -> None:
+        generate_team_with_players(self.user)
+        response = self.client.get(self.team_url, HTTP_AUTHORIZATION=self.auth_header)
+        self.assertEqual(response.status_code, 200)
+        response_data = response.json()
+        self.assertTrue(self.user.is_team_owner)
+        self.assertEqual(response_data['id'], self.user.team.id)
+        self.assertEqual(response_data['name'], self.user.team.name)
+        self.assertEqual(response_data['country'], self.user.team.country.name)
+        self.assertEqual(Decimal(response_data['budget']), self.user.team.budget)
+        self.assertEqual(Decimal(response_data['value']), self.user.team.value)
+
+
+class ListTeamsApiTestCase(TestCase):
+    def setUp(self) -> None:
+        super().setUp()
+        self.team_url = f'/api/league/teams/'
+        self.user = User.objects.create_user(
+            email='johndoe@onlinesoccermanager.com',
+            first_name='John',
+            last_name='Doe',
+            password='barbarfoo'
+        )
+        self.auth_header = f'Bearer {self.user.token}'
+
+    def test_list_teams_non_authenticated(self) -> None:
+        response = self.client.get(self.team_url)
+        self.assertEqual(response.status_code, 401)
+
+    def test_list_teams_authenticated(self) -> None:
+        response = self.client.get(self.team_url, HTTP_AUTHORIZATION=self.auth_header)
+        self.assertEqual(response.status_code, 200)
+        self.assertIsInstance(response.json(), list)
+
+
+class ListPlayersApiTestCase(TestCase):
+    def setUp(self) -> None:
+        super().setUp()
+        self.team_url = f'/api/league/players/'
+        self.user = User.objects.create_user(
+            email='johndoe@onlinesoccermanager.com',
+            first_name='John',
+            last_name='Doe',
+            password='barbarfoo'
+        )
+        self.auth_header = f'Bearer {self.user.token}'
+
+    def test_list_players_non_authenticated(self) -> None:
+        response = self.client.get(self.team_url)
+        self.assertEqual(response.status_code, 401)
+
+    def test_list_players_authenticated(self) -> None:
+        response = self.client.get(self.team_url, HTTP_AUTHORIZATION=self.auth_header)
+        self.assertEqual(response.status_code, 200)
+        self.assertIsInstance(response.json(), list)
+
+
+class ListTeamPlayersApiTestCase(TestCase):
+    def setUp(self) -> None:
+        super().setUp()
+        self.user = User.objects.create_user(
+            email='johndoe@onlinesoccermanager.com',
+            first_name='John',
+            last_name='Doe',
+            password='barbarfoo'
+        )
+        self.team = Team.objects.create(name='some random team', owner=self.user)
+        self.team_url = f'/api/league/teams/{self.team.id}/players/'
+        self.auth_header = f'Bearer {self.user.token}'
+
+    def test_list_team_players_non_authenticated(self) -> None:
+        response = self.client.get(self.team_url)
+        self.assertEqual(response.status_code, 401)
+
+    def test_list_team_players_authenticated(self) -> None:
+        response = self.client.get(self.team_url, HTTP_AUTHORIZATION=self.auth_header)
+        self.assertEqual(response.status_code, 200)
+        self.assertIsInstance(response.json(), list)
 
 
 class TeamUpdateRetrieveApiTestCase(TestCase):
@@ -37,8 +137,6 @@ class TeamUpdateRetrieveApiTestCase(TestCase):
         self.assertEqual(response_data['country'], self.team.country.name)
         self.assertEqual(Decimal(response_data['budget']), self.team.budget)
         self.assertEqual(Decimal(response_data['value']), self.team.value)
-        self.assertEqual(response_data['owner']['id'], self.user.id)
-        self.assertEqual(response_data['owner']['email'], self.user.email)
 
     def test_retrieve_team_non_authenticated(self) -> None:
         response = self.client.get(self.team_url)
@@ -307,10 +405,32 @@ class PlayerTransferApiTestCase(TestCase):
         self.assertEqual(response.status_code, 404)
 
 
-class TransferBuyApiTestCase(TestCase):
+class ListPendingTransfersApiTestCase(TestCase):
     def setUp(self) -> None:
         super().setUp()
-        self.base_url = f'/api/league/market/'
+        self.user = User.objects.create_user(
+            email='johndoe@onlinesoccermanager.com',
+            first_name='John',
+            last_name='Doe',
+            password='barbarfoo'
+        )
+        self.market_url = f'/api/league/market/'
+        self.auth_header = f'Bearer {self.user.token}'
+
+    def test_list_pending_transfers_non_authenticated(self) -> None:
+        response = self.client.get(self.market_url)
+        self.assertEqual(response.status_code, 401)
+
+    def test_list_pending_transfers_authenticated(self) -> None:
+        response = self.client.get(self.market_url, HTTP_AUTHORIZATION=self.auth_header)
+        self.assertEqual(response.status_code, 200)
+        self.assertIsInstance(response.json(), list)
+
+
+class PlayerBuyApiTestCase(TestCase):
+    def setUp(self) -> None:
+        super().setUp()
+        self.base_url = f'/api/league/players/'
         self.user = User.objects.create_user(
             email='johndoe@onlinesoccermanager.com',
             first_name='John',
@@ -321,7 +441,7 @@ class TransferBuyApiTestCase(TestCase):
         self.player = Player.objects.first()
         price = randint(100000,2000000)
         self.transfer = Transfer.objects.create(player=self.player, price=price)
-        self.player_buy_url = f'{self.base_url}{self.transfer.id}/buy/'
+        self.player_buy_url = f'{self.base_url}{self.player.id}/buy/'
 
     def test_player_buy_unauthenticated_user(self) -> None:
         response = self.client.post(self.player_buy_url)
@@ -360,14 +480,13 @@ class TransferBuyApiTestCase(TestCase):
         response = self.client.post(self.player_buy_url, HTTP_AUTHORIZATION=jwt_header)
         self.assertEqual(response.status_code, 201)
         response_data = response.json()
-        self.assertEqual(response_data['id'], self.transfer.id)
-        self.assertEqual(response_data['player'], self.player.id)
-        self.assertEqual(response_data['seller'], seller.id)
-        self.assertEqual(response_data['buyer'], buyer.id)
-        self.assertEqual(response_data['status'], TransferStatus.COMPLETE)
         self.player.refresh_from_db()
+        self.assertEqual(response_data['id'], self.player.id)
+        self.assertEqual(response_data['team'], buyer.id)
+        self.assertGreater(self.player.value, old_player_value)
+        self.assertNotIn(self.player, self.user.team.players.all())
         seller.refresh_from_db()
         buyer.refresh_from_db()
-        self.assertGreater(self.player.value, old_player_value)
         self.assertEqual(seller.budget, old_seller_team_budget + self.transfer.price)
         self.assertEqual(buyer.budget, old_buyer_team_budget - self.transfer.price)
+        self.assertIn(self.player, other_user.team.players.all())

@@ -3,7 +3,7 @@ from django.db import transaction
 
 from rest_framework.exceptions import ValidationError
 from typing import Optional
-from league.tasks import generate_team_with_players
+from league.services import generate_team_with_players
 from users.models import User
 
 @transaction.atomic

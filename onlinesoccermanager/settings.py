@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'django.contrib.sites',
     'rest_framework',
     'django_countries',
+    'django_filters',
     'users',
     'league',
     'oscsettings',
