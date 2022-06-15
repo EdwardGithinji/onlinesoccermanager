@@ -73,7 +73,7 @@ class TeamUpdateRetrieveView(APIView):
         response_data = self.OutputSerializer(team).data
         return Response(response_data, status=status.HTTP_200_OK)
 
-    def put(self, request, team_id):
+    def patch(self, request, team_id):
         team = team_retrieve(team_id)
         team_update_serializer = self.InputSerializer(data=request.data)
         team_update_serializer.is_valid(raise_exception=True)
@@ -97,7 +97,7 @@ class TeamPlayersListView(APIView, LinkHeaderPagination):
         position = serializers.CharField()
         country = CountryField(name_only=True)
         value = serializers.DecimalField(max_digits=65, decimal_places=2)
-        team = serializers.IntegerField(source='team.id')
+        # team = serializers.IntegerField(source='team.id')
 
 
     def get(self, request, team_id):
@@ -163,7 +163,7 @@ class PlayerUpdateRetrieveView(APIView):
         response_data = self.OutputSerializer(player).data
         return Response(response_data, status=status.HTTP_200_OK)
 
-    def put(self, request, player_id):
+    def patch(self, request, player_id):
         player = player_retrieve(player_id)
         player_update_serializer = self.InputSerializer(data=request.data)
         player_update_serializer.is_valid(raise_exception=True)
@@ -181,7 +181,7 @@ class TransferListView(APIView, LinkHeaderPagination):
         sort_by = serializers.ChoiceField(choices=('price', '-price'), required=False)
 
     class OutputSerializer(serializers.Serializer):
-        id = serializers.IntegerField()
+        # id = serializers.IntegerField()
         player = serializers.IntegerField(source='player.id')
         first_name = serializers.CharField(source='player.first_name')
         last_name = serializers.CharField(source='player.last_name')
@@ -209,7 +209,7 @@ class PlayerTransferPostView(APIView):
         price = serializers.DecimalField(max_digits=65, decimal_places=2, min_value=1)
 
     class OutputSerializer(serializers.Serializer):
-        id = serializers.IntegerField()
+        # id = serializers.IntegerField()
         player = serializers.IntegerField(source='player.id')
         first_name = serializers.CharField(source='player.first_name')
         last_name = serializers.CharField(source='player.last_name')

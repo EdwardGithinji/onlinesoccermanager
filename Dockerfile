@@ -21,7 +21,9 @@ ADD onlinesoccermanager /code/onlinesoccermanager
 ADD league /code/league
 ADD oscsettings /code/oscsettings
 ADD users /code/users
+# ADD .env /code/.env
 
 ADD entrypoint.sh /code/
+RUN chmod +x ./entrypoint.sh
 
 CMD ["./entrypoint.sh", "daphne", "-b", "0.0.0.0", "-p", "8005", "onlinesoccermanager.asgi:application"]

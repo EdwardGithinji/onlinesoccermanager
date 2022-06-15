@@ -43,7 +43,6 @@ def player_retrieve(player_id: int):
 def active_transfers_list(filters = {}):
     transfers_qs = Transfer.objects.filter(status=TransferStatus.PENDING)
     sort_option = filters.pop('sort_by', None)
-    transfers_qs = TransferFilter(filters, transfers_qs).qs
     if sort_option != None:
-        return transfers_qs.order_by(sort_option)
-    return transfers_qs.order_by('id')
+        return TransferFilter(filters, transfers_qs).qs.order_by(sort_option)
+    return TransferFilter(filters, transfers_qs).qs.order_by('id')

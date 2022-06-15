@@ -58,7 +58,7 @@ def team_update(team: Team, user: User, name:Optional[str] = None, country: Opti
     if user != team.owner:
         raise PermissionDenied({'detail':'only team owner can update team details'})
     if name:
-        if Team.objects.filter(name=name).exists():
+        if Team.objects.filter(name=name).exclude(id=team.id).exists():
             raise ValidationError({'detail': 'A team already exists with that name, choose another'})
         team.name = name
     if country:

@@ -165,7 +165,7 @@ class TeamUpdateRetrieveApiTestCase(TestCase):
             "name": team_name,
             "country": country_code
         }
-        response = self.client.put(
+        response = self.client.patch(
             self.team_url,
             data=update_data,
             HTTP_AUTHORIZATION=self.auth_header,
@@ -191,7 +191,7 @@ class TeamUpdateRetrieveApiTestCase(TestCase):
             "name": 'not my team',
             "country": 'arg'
         }
-        response = self.client.put(
+        response = self.client.patch(
             self.team_url,
             data=update_data,
             HTTP_AUTHORIZATION=jwt_header,
@@ -205,7 +205,7 @@ class TeamUpdateRetrieveApiTestCase(TestCase):
             "name": 'not my team',
             "country": 'arg'
         }
-        response = self.client.put(
+        response = self.client.patch(
             self.team_url,
             data=update_data,
             content_type='application/json'
@@ -228,7 +228,7 @@ class TeamUpdateRetrieveApiTestCase(TestCase):
             "country": 'arg'
         }
 
-        response = self.client.put(
+        response = self.client.patch(
             team_update_url,
             data=update_data,
             HTTP_AUTHORIZATION=jwt_header,
@@ -292,7 +292,7 @@ class PlayerUpdateRetrieveApiTestCase(TestCase):
             "last_name": last_name,
             "country": country_code
         }
-        response = self.client.put(
+        response = self.client.patch(
             self.player_url,
             data=update_data,
             HTTP_AUTHORIZATION=self.auth_header,
@@ -320,7 +320,7 @@ class PlayerUpdateRetrieveApiTestCase(TestCase):
             "last_name": "player",
             "country": 'arg'
         }
-        response = self.client.put(
+        response = self.client.patch(
             self.player_url,
             data=update_data,
             HTTP_AUTHORIZATION=jwt_header,
