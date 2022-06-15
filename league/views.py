@@ -5,7 +5,7 @@ from django_countries.serializer_fields import CountryField
 from league.constants import PlayerPosition
 
 from league.selectors import team_retrieve, team_list_players, player_retrieve, \
-    active_transfers_list, user_team_retrieve, team_list, players_list
+    active_transfers_list, user_team_retrieve, team_list, players_list, transfer_retrieve_by_player_id
 from league.services import team_update, player_update, player_transfer_create, \
     player_buy
 from onlinesoccermanager.pagination import LinkHeaderPagination
@@ -200,6 +200,27 @@ class TransferListView(APIView, LinkHeaderPagination):
             response_data = self.OutputSerializer(page, many=True).data
             return self.get_paginated_response(response_data)
         response_data = self.OutputSerializer(transfers, many=True).data
+        return Response(response_data, status=status.HTTP_200_OK)
+
+
+class TransferPlayerRetrieveView(APIView):
+
+    class OutputSerializer(serializers.Serializer):
+        player = serializers.IntegerField(source='player.id')
+        first_name = serializers.CharField(source='player.first_name')
+        last_name = serializers.CharField(source='player.last_name')
+        position = serializers.CharField(source='player.position')
+        country = CountryField(source='player.country', name_only=True)
+        age = serializers.IntegerField(source='player.age')
+        team = serializers.IntegerField(source='seller.id')
+        team_name = serializers.CharField(source='seller.name')
+        current_value = serializers.DecimalField(source='player.value', max_digits=65, decimal_places=2)
+        price = serializers.DecimalField(max_digits=65, decimal_places=2)
+        status = serializers.CharField()
+
+    def get(self, request, player_id):
+        transfer = transfer_retrieve_by_player_id(player_id)
+        response_data = self.OutputSerializer(transfer).data
         return Response(response_data, status=status.HTTP_200_OK)
 
 

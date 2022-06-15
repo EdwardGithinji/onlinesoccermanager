@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.generics import get_object_or_404
 from league.constants import TransferStatus
 from league.filters import TeamFilter, PlayerFilter, TransferFilter
@@ -46,3 +47,15 @@ def active_transfers_list(filters = {}):
     if sort_option != None:
         return TransferFilter(filters, transfers_qs).qs.order_by(sort_option)
     return TransferFilter(filters, transfers_qs).qs.order_by('id')
+
+
+def transfer_retrieve_by_player_id(player_id:int):
+    try:
+        transfer = Transfer.objects.get(player_id=player_id, status=TransferStatus.PENDING)
+    except Transfer.DoesNotExist:
+        raise NotFound({'detail':'player not found on transfer market'})
+    except Transfer.MultipleObjectsReturned:
+        raise ValidationError({
+            'detail': 'this player has multiple pending transfers on market. contact admin for further assistance'
+            })
+    return transfer

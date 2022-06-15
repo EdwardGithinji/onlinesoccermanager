@@ -42,6 +42,9 @@ class Player(models.Model):
     team = models.ForeignKey(Team, related_name='players', on_delete=models.CASCADE)
     value = models.DecimalField(max_digits=65, decimal_places=2, default=get_initial_player_value)
 
+    def __str__(self):
+        return ' '.join(filter(None, (self.first_name, self.last_name)))
+
 
 class Transfer(models.Model):
     seller = models.ForeignKey(Team, null=True, blank=True, related_name='sold_players', on_delete=models.SET_NULL)
@@ -53,6 +56,8 @@ class Transfer(models.Model):
     def save(self, *args: Any, **kwargs: Any) -> None:
         if not self.id:
             self.status = TransferStatus.PENDING
-        if self.status == TransferStatus.PENDING and self.player is not None:
-            self.seller = self.player.team
+        if self.status == TransferStatus.PENDING:
+            if self.player is not None:
+                self.seller = self.player.team
+            self.buyer = None
         super().save(**kwargs)

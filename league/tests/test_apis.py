@@ -427,6 +427,55 @@ class ListPendingTransfersApiTestCase(TestCase):
         self.assertIsInstance(response.json(), list)
 
 
+class TransferRetrieveByPlayerIDApiTestCase(TestCase):
+    def setUp(self) -> None:
+        super().setUp()
+        self.user = User.objects.create_user(
+            email='johndoe@onlinesoccermanager.com',
+            first_name='John',
+            last_name='Doe',
+            password='barbarfoo'
+        )
+        self.team = Team.objects.create(owner=self.user, name='test team name')
+        self.player = Player.objects.create(team=self.team, first_name='first', last_name='last', age=22)
+        self.transfer_url = f'/api/league/market/{self.player.id}/'
+        self.auth_header = f'Bearer {self.user.token}'
+
+    def test_retrieve_transfer_by_player_non_authenticated(self) -> None:
+        response = self.client.get(self.transfer_url)
+        self.assertEqual(response.status_code, 401)
+
+    def test_retrieve_non_active_transfer_by_player_authenticated_non_team_owner(self) -> None:
+        other_user = User.objects.create_user(
+            email='notme@onlinesoccermanager.com',
+            first_name='Not',
+            last_name='Me',
+            password='barbarfoo'
+        )
+        jwt_header = f'Bearer {other_user.token}'
+        response = self.client.get(self.transfer_url, HTTP_AUTHORIZATION=jwt_header)
+        self.assertEqual(response.status_code, 404)
+
+    def test_retrieve_non_active_transfer_by_player_by_team_owner(self) -> None:
+        response = self.client.get(self.transfer_url, HTTP_AUTHORIZATION=self.auth_header)
+        self.assertEqual(response.status_code, 404)
+
+    def test_retrieve_pending_transfer_by_player_by_team_owner(self) -> None:
+        transfer = Transfer.objects.create(player=self.player, seller=self.team, price=2000000)
+        response = self.client.get(self.transfer_url, HTTP_AUTHORIZATION=self.auth_header)
+        self.assertEqual(response.status_code, 200)
+        response_data = response.json()
+        self.assertTrue(self.user.is_team_owner)
+        self.assertEqual(response_data['player'], self.player.id)
+        self.assertEqual(response_data['first_name'], self.player.first_name)
+        self.assertEqual(response_data['last_name'], self.player.last_name)
+        self.assertEqual(response_data['team'], self.team.id)
+        self.assertEqual(response_data['team_name'], self.team.name)
+        self.assertEqual(response_data['status'], TransferStatus.PENDING)
+        self.assertEqual(Decimal(response_data['current_value']), self.player.value)
+        self.assertEqual(Decimal(response_data['price']), transfer.price)
+
+
 class PlayerBuyApiTestCase(TestCase):
     def setUp(self) -> None:
         super().setUp()

@@ -27,6 +27,8 @@ Create a ```.env``` file at the root of this project, and in it, define the foll
 
     DB_HOST - [Compulsory] HOST where PostgreSQL db is located
 
+    CELERY_BROKER_URL = [Compulsory] redis host ip
+
 
 **Note** replace every ```your...``` with the actual names you used or intend to use.
 
@@ -139,7 +141,7 @@ Logged in users can list teams currently available in the league
 ### Retrieve Team
 `GET /api/league/teams/<team_id>/`
 
-Logged in user can retrieves team's information whose primary key equals provided <team_id> in request url else 404
+Logged in user can retrieves team's information whose primary key equals provided `team_id` in request url else 404
 
 #### Response
 
@@ -160,7 +162,7 @@ Logged in user can retrieves team's information whose primary key equals provide
 ### Update Team
 `PATCH /api/league/teams/<team_id>/`
 
-Logged in team owner can update a team's information whose primary key equals provided <team_id> in request url
+Logged in team owner can update a team's information whose primary key equals provided `team_id` in request url
 Updatable fields are name and country only.
 
 #### Payload
@@ -190,7 +192,7 @@ Updatable fields are name and country only.
 ### List Team Players
 `GET /api/league/teams/<team_id>/players/`
 
-Logged in users can list players of the team whose primary key equals <team_id>
+Logged in users can list players of the team whose primary key equals `team_id`
 
 #### Filters and Pagination
 `?page=<int>&page_size=<int>&country=<country_code>&position=goalkeeper/attacker/midfielder/defender`
@@ -258,7 +260,7 @@ Logged in users can list players currently available in the league
 ### Retrieve Player
 `GET /api/league/players/<player_id>/`
 
-Logged in users can retrieve player whose id is equal to <player_id>
+Logged in users can retrieve player whose id is equal to `player_id`
 
 #### Response
 
@@ -279,7 +281,7 @@ Logged in users can retrieve player whose id is equal to <player_id>
 ### Update Player
 `PUT /api/league/players/<player_id>/`
 
-Logged in team owner can update information for player whose id is equal to <player_id>. Updatable fields are first_name, last_name and country
+Logged in team owner can update information for player whose id is equal to `player_id`. Updatable fields are first_name, last_name and country
 
 #### Payload
 {
@@ -340,10 +342,32 @@ Logged in users can list pending transfers available on the league market
 ]
 ```
 
+### Retrieve Player on Market
+`GET /api/league/market/<player_id>/`
+
+Logged in users can retrieve a player on the market by `player_id`
+
+#### Response
+```
+{
+    "player": 3,
+    "first_name": "Stephen",
+    "last_name": "Sullivan",
+    "position": "attacker",
+    "country": "Kenya",
+    "age": 34,
+    "team": 2,
+    "team_name": "MAN city",
+    "current_value": "1000000.00",
+    "price": "300000.00",
+    "status": "pending"
+}
+```
+
 ### Put Player on Transfer List
 `POST /api/league/players/<player_id>/transfer/`
 
-Logged in team owner can put player whose primary key equals <player_id> on the transfer list
+Logged in team owner can put player whose primary key equals `player_id` on the transfer list
 
 #### Payload
 ```
@@ -370,7 +394,7 @@ Logged in team owner can put player whose primary key equals <player_id> on the 
 ### Buy Player
 `POST /api/league/players/<player_id>/buy/`
 
-Logged in team owner can buy player whose primary key equals <player_id> from the transfer list
+Logged in team owner can buy player whose primary key equals `player_id` from the transfer list
 
 
 #### Response
