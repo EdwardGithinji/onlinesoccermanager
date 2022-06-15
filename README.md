@@ -43,9 +43,9 @@ User registers to the fanatasy league as a team owner. A team will be autogenera
 #### Payload
 ```
 {
-	"email": "someemail@test.com",
-	"password1": "atleast8chars",
-	"password2": "atleast8chars",
+    "email": "someemail@test.com",
+    "password1": "atleast8chars",
+    "password2": "atleast8chars",
     "first_name": "some",   # OPTIONAL
     "last_name": "one       # OPTIONAL
 }
@@ -56,7 +56,7 @@ User registers to the fanatasy league as a team owner. A team will be autogenera
 
 {
     "id": <user_id>,
-	"email": "someemail@test.com",
+    "email": "someemail@test.com",
     "first_name": "some",   # could be null
     "last_name": "one       # could be null
 }

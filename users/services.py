@@ -4,7 +4,9 @@ from django.db import transaction
 from rest_framework.exceptions import ValidationError
 from typing import Optional
 from league.services import generate_team_with_players
+# from league.tasks import create_team_with_players_on_user_registration
 from users.models import User
+
 
 @transaction.atomic
 def user_create(
@@ -28,6 +30,7 @@ def user_create(
         password=password1
     )
     generate_team_with_players(user)
+    # transaction.on_commit(lambda: create_team_with_players_on_user_registration.delay(user.id))
     return user
 
 

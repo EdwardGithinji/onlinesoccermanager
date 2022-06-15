@@ -1,7 +1,7 @@
 import string
 from decimal import Decimal
 from random import randint, choices
-from typing import Optional
+from typing import Optional, Union
 from faker import Faker
 from django.contrib.auth import get_user_model
 from django.db import transaction
@@ -18,7 +18,9 @@ NUMBER_OF_DEFENDERS = 6
 NUMBER_OF_ATTACKERS = 5
 
 
-def generate_team_with_players(user: User):
+def generate_team_with_players(user: Union[User, int]):
+    if isinstance(user, int):
+        user = User.objects.get(id=user)
     fake = Faker()
     team_names_set = set(Team.objects.values_list('name', flat=True))
     abbrev_size = 10
